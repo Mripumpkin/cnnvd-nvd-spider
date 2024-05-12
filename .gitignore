@@ -1,0 +1,14 @@
+*.pyc
+*.tmp
+/logs/
+*.log
+test*.py
+/.cache/
+/.history/
+/.vscode/
+xml/*
+download/*
+markdown.md
+.cache
+/venv/
+/__pycache__/

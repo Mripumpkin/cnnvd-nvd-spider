@@ -1,0 +1,12 @@
+*.pyc
+*.tmp
+test*.py
+/.cache/
+/.history/
+/.vscode/
+xml/*
+CPEinfo/*
+markdown.md
+.DS_Store
+.cache
+/__pycache__/
