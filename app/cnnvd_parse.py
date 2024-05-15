@@ -30,6 +30,7 @@ class Save_Cnnvd():
         self.title_list = ['编号撤回', '编号已被CVE保留', '编号错误', '编码撤回', '被拒绝的漏洞编号', '编号重复', '编号撤销', 'None', '', '撤销', '撤回', None]
         self.attr_list = ['cve', 'title', 'type', 'risk_level', 'descript']
     
+    #unicode中文字符编码范围,判断是否为汉字
     @staticmethod  
     def is_chinese(string):
         for ch in string:
@@ -118,11 +119,12 @@ class Save_Cnnvd():
         
     
     async def parse_cnnvd(self,path):
-        tree = ET.parse(path)
-        root = tree.getroot()
-        for child_of_root in root:
-            yield child_of_root
-    
+        with open(path,'r') as file:
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for child_of_root in root:
+                yield child_of_root
+
     async def parse_cnnvd_entry(self,child_of_root):
         re_str = r"^((http://)|(https://))?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}(/)"
         
@@ -162,7 +164,6 @@ class Save_Cnnvd():
         
         def handle_source(entry,k):
             entry['source'] = "CNNVD漏洞库"
-            
         
         handlers = {
             'other_id': handle_other_id,
@@ -267,6 +268,7 @@ class Save_Cnnvd():
                     entry[tag] = value
            
             entry['refs'] = ','.join(entry.get('refs', []))
+            allvul.append(Cnnvd(**entry))
         return allvul  
 
 async def run(cnnvd_change):
@@ -278,4 +280,3 @@ async def run(cnnvd_change):
 
     run_time = end_time - start_time
     logger.info(f"cnnvd解析运行时间为:{run_time}秒") 
-

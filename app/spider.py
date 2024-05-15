@@ -76,7 +76,6 @@ class Spider_Cnnvd():
         self.login_url = all_url["login_url"]
         self.download_url = all_url["download_url"]
         self.xml_list_url = all_url["xml_list_url"]
-        self.ocr = ddddocr.DdddOcr()
         self.session = requests.Session()
         self.username = login_info['username']
         self.password = login_info['password']
@@ -85,13 +84,14 @@ class Spider_Cnnvd():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36'
         }
         self.Token = ""
-        self.Download_id = {}
+        self.download_file_info = {}
         self.save_path = save_path
 
     # 发送GET请求获取验证码图片的Base64编码
     @retry
     def get_captcha(self):
         try:
+            ocr = ddddocr.DdddOcr()
             response =  self.session.get(url=self.captcha_url,headers=self.headers)
             if response.status_code == 200:
                 captcha_info = response.json()
@@ -102,7 +102,7 @@ class Spider_Cnnvd():
                 captcha = captcha_info["data"]
                 image_data_base64_cleaned = captcha["image"]
                 image_base64 = image_data_base64_cleaned.split(",")[1]
-                res = self.ocr.classification(image_base64)
+                res = ocr.classification(image_base64)
                 if len(res) != 4:
                     raise CustomError(f"Cnnvd验证码解析错误:{res}")
                 captcha["captcha_code"] = res
@@ -141,7 +141,7 @@ class Spider_Cnnvd():
         else:
             raise CustomError(f"Cnnvd登录失败,状态码:{response.status_code}")
     
-    def check_id_changes(func):
+    def check_file_changes(func):
         
         cache_path = '{}/.cache'.format(os.getcwd())
         if not os.path.exists(cache_path):
@@ -154,29 +154,29 @@ class Spider_Cnnvd():
             # 检查是否存在缓存文件
             cache_file = f"{cache_path}/cnnvd.json"
             if os.path.exists(cache_file):
-                new_Download_id = {}
-                with open(cache_file, "r") as f:
+                new_download_file_info = {}
+                with open(cache_file, "r",encoding="utf-8") as f:
                     cached_data = json.load(f)
-                # 检查每个 id 是否有变化，有变化则更新 Download_id
+                del cached_data["当月"]
                 for info in self.xml_list_Info["data"]["records"]:
-                    new_Download_id[info["timeName"]] = info["id"]
+                    new_download_file_info[info["timeName"]] = info
                     if info["timeName"] in cached_data:
-                        if cached_data[info["timeName"]] != info["id"]:
-                            self.Download_id[info["timeName"]] = info["id"]
+                        if cached_data[info["timeName"]]["updateTime"] != info["updateTime"]:
+                            self.download_file_info[info["timeName"]] = info
                     else:
-                        self.Download_id[info["timeName"]] = info["id"]
+                        self.download_file_info[info["timeName"]] = info
                 with open(cache_file, "w") as f:
-                    json.dump(new_Download_id, f)
+                    json.dump(new_download_file_info, f)
             else:
                 for info in self.xml_list_Info["data"]["records"]:
-                    self.Download_id[info["timeName"]] = info["id"]
-                with open(cache_file, "w") as f:
-                    json.dump(self.Download_id, f)
+                    self.download_file_info[info["timeName"]] = info
+                with open(cache_file, "w",) as f:
+                    json.dump(self.download_file_info, f,ensure_ascii=False)
                 
         return wrapper
     
-    #获取下载文件id
-    @check_id_changes
+    #获取下载文件
+    @check_file_changes
     def get_xml_list_info(self):        
         data = {
             "pageIndex": 1,
@@ -193,11 +193,11 @@ class Spider_Cnnvd():
         except Exception as e:
             raise CustomError(f"获取Cnnvd_xml文件信息失败,状态码:{response.status_code}")
         
-    async def download_single_xml(self,file_name,download_id):
+    async def download_single_xml(self,file_name,download_file_info):
         self.headers["Token"] = self.Token
         data = {
             "downloadFileType": 1,
-            "id": download_id,
+            "id": download_file_info["id"],
         }
         response = self.session.post(url=self.download_url,data=json.dumps(data),headers=self.headers)
         if response.status_code == 200:
@@ -207,7 +207,7 @@ class Spider_Cnnvd():
         else:
             try:
                 self.login()
-                await self.download_single_xml(file_name,download_id)
+                await self.download_single_xml(file_name,download_file_info["id"])
             except Exception as e:
                 logger.error(e)
                 logger.warning(f"CNNVD-XML:{file_name}文件下载失败")
@@ -216,11 +216,13 @@ class Spider_Cnnvd():
     async def download_xml(self):
         try:
             self.get_xml_list_info()
+            if not self.download_file_info:
+                return self.download_file_info
             self.login()
-            for file_name,id in self.Download_id.items():
+            for file_name,id in self.download_file_info.items():
                 file_name = file_name + "_new.xml"
                 await self.download_single_xml(file_name,id)
-            return self.Download_id
+            return self.download_file_info
         except CustomError as e:
             logger.error(e)
         except Exception as e:
@@ -241,7 +243,6 @@ class Spider_Nvd():
         }
             
     def check_changes(func):
-    
         cache_path = '{}/.cache'.format(os.getcwd())
         if not os.path.exists(cache_path):
             os.mkdir(cache_path)            
@@ -255,6 +256,7 @@ class Spider_Nvd():
             if os.path.exists(cache_file):
                 with open(cache_file, "r") as f:
                     cached_data = json.load(f)
+                del cached_data["https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2024.json.gz"]
                 for key,value in self.zip_links.items():
                     if key in cached_data and cached_data[key] == value:
                         to_remve.append(key)
@@ -356,9 +358,11 @@ class Spider_Nvd():
 
 async def run():
     spider_c = Spider_Cnnvd(CNNVD.all_url,CNNVD.login_info,CNNVD.save_path)
-    await spider_c.download_xml()
+    cnnvd_change = await spider_c.download_xml()
     spider_n = Spider_Nvd(NVD.all_url,NVD.save_path)
-    await spider_n.download_json()
+    nvd_change = await spider_n.download_json()
+    logger.warning(cnnvd_change)
+    logger.warning(nvd_change)
 
 
 if __name__ == "__main__":
