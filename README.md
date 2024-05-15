@@ -4,7 +4,7 @@
 1. CNNVD开源漏洞XML文件，但XML文件中存在未编码的字符影响解析，格式化处理XML文件
 2. 解析CNNVD的XML文件并入库，如果数据库中有该条漏洞数据(不处理cpe相关的3个字段)，就不入库
 3. 使用NVD的漏洞json文件补全CNNVD的XML中缺少的cpe等其他信息
-4. 将NVD与CNNVD通过CVE对于
+4. 将NVD与CNNVD通过CVE编号相关联，补全漏洞信息
 5. CNNVD XML: **[CNNVD XML](https://www.cnnvd.org.cn/home/dataDownLoad)**
 6. NVD JSON: **[NVD JSON](https://nvd.nist.gov/vuln/data-feeds)**
 
