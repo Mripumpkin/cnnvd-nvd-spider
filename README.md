@@ -1,4 +1,4 @@
-# CNNVD-NVD Spider And Parser 
+# CNNVD-NVD 数据爬取及解析
 
 ## CNNVD-NVD 数据爬取及解析
 1. CNNVD开源漏洞XML文件，但XML文件中存在未编码的字符影响解析，格式化处理XML文件
