@@ -19,6 +19,5 @@
 2. :info:**config文件可设置计划任务时间**
 3. :warning:**数据库选择为为PostgreSQL**
 4. :warning:**CNNVD爬虫需要申请CONNVD账号，账号密码在config.py上设置**
-5. :warning:**每次运行前必须备份原数据表**
-6. :warning:**CNNVD XML文件爬取后，需要格式化处理XML文件中的未编码字符，使CONNVD XML其可正常解析，否则会报错**
-7. :warning:**执行python -m db.create_db 创建数据库**
+5. :warning:**CNNVD XML文件爬取后，需要格式化处理XML文件中的未编码字符，使CONNVD XML其可正常解析，否则会报错**
+6. :warning:**执行python -m db.create_db 创建数据库**
