@@ -16,28 +16,22 @@ LINE_TAG = ['<?xml version="1.0" encoding="UTF-8"?>',
             '<cnnvd cnnvd_xml_version="*.*" pub_date="****-**-**" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
             '<entry>', '</entry>', '<other-id>', '</other-id>', '</cnnvd>','<source></source>', '<bugtraq-id></bugtraq-id>', '<vuln-solution></vuln-solution>']
 
-#(?<=<[^>]*>)(.*?)(?=<\/[^>]*>) python re 无法处理任意长度标签的零宽断言
 def format_linexml_text(linexml_text):
     try:
         xml_str = linexml_text[0]
         if not xml_str:
             return ""
-
-        # 替换特殊字符
         xml_str = xml_str.replace('&', '&amp;') \
                          .replace('<', '&lt;') \
                          .replace('>', '&gt;') \
                          .replace('"', '&quot;') \
                          .replace("'", '&apos;')
-
         return xml_str
     except Exception as e:
         logger.error("format_linexml_text error: %s", e)
         return ""
 
-
-
-def format_linexml(line):          #处理每行XML获取标签文本
+def format_linexml(line):          
     
     def format_tag(tag)->str:  
         per_tag = tag[1:-1]
@@ -73,21 +67,19 @@ def format_linexml(line):          #处理每行XML获取标签文本
 async def process_and_generate_xml(file_path):
     try:
         with open(file_path, 'r+', encoding='utf-8') as file:
-            lines = file.readlines()  # 读取所有行
-
-            file.seek(0)  # 将文件指针移回文件开头
-
+            lines = file.readlines() 
+            file.seek(0) 
             for line_tmp in lines:
-                line = line_tmp.strip()  # 剔除行尾换行符
+                line = line_tmp.strip() 
                 if line in LINE_TAG:
-                    file.write(line_tmp)  # 写入包含行尾换行符的行
+                    file.write(line_tmp) 
                 elif line == '':
                     pass
                 else:
                     encoded_line = format_linexml(line)
                     if encoded_line:
                         file.write('\t' + encoded_line + '\n')
-            file.truncate()  # 截断文件，删除多余内容（如果新内容长度小于旧内容长度）
+            file.truncate()  
     except Exception as e:
         logger.error(f"Error processing file: {e}")
  

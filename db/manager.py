@@ -9,13 +9,14 @@ from db.base import BaseDBManager
 from db.model import Cnnvd,Vulncpe
 from sqlalchemy.sql import func
 from common.async_tool import async_func
+from collections.abc import Mapping
 # from config.config import config
 
 
 class SqlManager(BaseDBManager):
     async def get_cnnvd_vul_by_vulnid(self, vuln_id):
-        query = self.session.query(Cnnvd)
-        query = query.filter(Cnnvd.vuln_id == vuln_id)
+        query = self.session.query(Cnnvd.id,Cnnvd.cve,Cnnvd.title,Cnnvd.type,Cnnvd.risk_level,Cnnvd.descript)
+        query = query.filter(Cnnvd.cnnvd == vuln_id)
         
         # 使用 async_func 执行查询并获取结果
         res = await async_func(query.first)
@@ -23,7 +24,12 @@ class SqlManager(BaseDBManager):
 
     async def add_cnnvd_vul(self,data):
         await async_func(self.session.add, data)
-
+        
+    async def add_connvd_all_vul(self,all_data):
+        await async_func(self.session.bulk_save_objects,all_data)
+        
+    async def update_connvd_all_vul(self,model:Mapping,all_data:list):
+        await async_func(self.session.bulk_update_mappings,model,all_data)
 
     async def update_cnnvd_vul(self, id, info):
         query = self.session.query(Cnnvd).filter(Cnnvd.id == id)
@@ -35,12 +41,13 @@ class SqlManager(BaseDBManager):
         return lines
     
     async def get_contains_value_connvd(self,value):
-        query = self.session.query(Cnnvd.id,Cnnvd.cve_id,Cnnvd.vuln_software_list).filter(Cnnvd.cve_id.contains(value))
+        query = self.session.query(Cnnvd.id,Cnnvd.cve,Cnnvd.cwe,Cnnvd.cpe,Cnnvd.cvss,Cnnvd.cvss_vector,Cnnvd.refs).filter(Cnnvd.cve.contains(value))
         res = await async_func(query.all)
         return res
     
-    async def get_connvd_by_cve_id(self,id):
-        query = self.session.query(Cnnvd.id,Cnnvd.vuln_software_list).filter(Cnnvd.cve_id == id)
+    async def get_connvd_by_cve_id(self,cve_id):
+        # 'cpe', 'cve', 'cwe', 'cvss', 'cvss_vector', 'refs'
+        query = self.session.query(Cnnvd.id,Cnnvd.cve,Cnnvd.cwe,Cnnvd.cpe,Cnnvd.cvss,Cnnvd.cvss_vector,Cnnvd.refs).filter(Cnnvd.cve == cve_id)
         res = await async_func(query.first)
         return res
     
@@ -52,6 +59,11 @@ class SqlManager(BaseDBManager):
     async def connvd_count(self):
         query = self.session.query(func.count(Cnnvd.id))
         res = await async_func(query.scalar)
+        return res
+    
+    async def get_all_uuid(self):
+        query = self.session.query(Cnnvd.uuid)
+        res = await async_func(query.all)
         return res
 
     ######################## cpe ################################

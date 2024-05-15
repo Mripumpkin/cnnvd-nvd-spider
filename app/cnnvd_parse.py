@@ -24,16 +24,12 @@ SEVERITY_DICT = {
     '低危': 0
 }
 
-# 解析connvd文件，导入数据库
-# 查询相同vuln_id,进行重复性校验
-# 入库时会check相同vuln_id的其他字段是否相同
 class Save_Cnnvd():
     def __init__(self,path):
         self.cnnvd_xml_path = path
-        self.name_list = ['编号撤回', '编号已被CVE保留', '编号错误', '编码撤回', '被拒绝的漏洞编号', '编号重复', '编号撤销', 'None', '', '撤销', '撤回', None]
-        self.attr_list = ['vuln_solution', 'cve_id', 'name', 'vuln_type', 'refs', 'severity', 'vuln_descript', 'bugtraq_id', 'published', 'modified', 'thrtype']
+        self.title_list = ['编号撤回', '编号已被CVE保留', '编号错误', '编码撤回', '被拒绝的漏洞编号', '编号重复', '编号撤销', 'None', '', '撤销', '撤回', None]
+        self.attr_list = ['cve', 'title', 'type', 'risk_level', 'descript']
     
-    #unicode中文字符编码范围,判断是否为汉字
     @staticmethod  
     def is_chinese(string):
         for ch in string:
@@ -41,7 +37,6 @@ class Save_Cnnvd():
                 return True
         return False
     
-    #对比文件数据和数据库数据更新
     @staticmethod  
     def compare_data(data_x, data_y)->bool:
         type_x = type(data_x)
@@ -61,23 +56,34 @@ class Save_Cnnvd():
             except ValueError:
                 pass
         return data_x == data_y
+    
+    async def get_max_uuid(self,dbm)->int:
+        data  = await dbm.get_all_uuid()
+        all_uuid = sorted(data, key=lambda x: int(x.uuid.split("-")[2]))
+        if all_uuid:
+            max_uuid = all_uuid[-1]
+            num = int(max_uuid[0].split('-')[2]) 
+        else:
+            num = 100000
+        return num
 
     async def save_to_db(self,check_list:dict):
+        
         dbm = await SqlManager()
-        # check_list_xml = sorted(os.listdir(self.cnnvd_xml_path), reverse=True)
+        uuid_num  = await self.get_max_uuid(dbm)
         check_list_xml = sorted([i for i in os.listdir(self.cnnvd_xml_path) if i.endswith('.xml')], reverse=True)
         keys_list = list(check_list.keys())
         check_list_xml = [item for item in check_list_xml if item.split(".")[0] in keys_list]
-
         for check in check_list_xml:
+            logger.info(f"开始解析入库: {check}文件")
+            all_data = []
             try:
-                allvul = await self.parse_cnnvd(self.cnnvd_xml_path+'/'+check)
-                for vul in allvul:
-                    cnnvd_id = str(vul.vuln_id)
-                    name = str(vul.name)
+                async for item in self.parse_cnnvd(self.cnnvd_xml_path+'/'+check):
+                    vul = await self.parse_cnnvd_entry(item)
+                    cnnvd_id = str(vul.cnnvd)
+                    title = vul.title
                     try:
-                        if name in self.name_list:
-                            logger.info('筛选失效漏洞:{}:{}'.format(cnnvd_id, name))
+                        if title in self.title_list:
                             continue
                             
                         tmps = await dbm.get_cnnvd_vul_by_vulnid(cnnvd_id)  
@@ -94,51 +100,36 @@ class Save_Cnnvd():
                             if update_info:   
                                 await dbm.update_cnnvd_vul(tmps.id, update_info)
                                 await dbm.commit()
-                                logger.info(f'更新漏洞{cnnvd_id}:{update_info}')
                         else:
-                            await dbm.add_cnnvd_vul(vul)
-                            await dbm.commit()
-                            logger.info(f'新增漏洞:{cnnvd_id}')
+                            uuid_num += 1
+                            publish_time = str(vul.published)
+                            uuid_year = datetime.datetime.strptime(publish_time, "%Y-%m-%d").strftime("%Y%m")
+                            uuid = f'CVM-{uuid_year}-{uuid_num}'
+                            vul.uuid = uuid
+                            all_data.append(vul)
                     except Exception as e:
-                        logger.error(f'录入错误:{vul.name},{e}')
-                        await dbm.rollback()
+                        logger.error(f'录入错误:{vul.cnnvd},{e}')
+                if all_data:
+                    await dbm.add_connvd_all_vul(all_data)
+                    await dbm.commit()
             except Exception as e:
                 logger.error(e)   
         await dbm.close()
         
     
-    #解析cnnvd xml文件
-    #获取cve_id
-    #获取cpe_operator及negate，并统一大小写??????
-    #获取vuln_software_list，若vuln_software_list也是entry子节点，cpe也是vuln_software_list的cpe
-    #获取refs
-    #获取severity,危险等级赋值
-    # @staticmethod
     async def parse_cnnvd(self,path):
-        allvul = []
         tree = ET.parse(path)
         root = tree.getroot()
+        for child_of_root in root:
+            yield child_of_root
+    
+    async def parse_cnnvd_entry(self,child_of_root):
         re_str = r"^((http://)|(https://))?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}(/)"
-
+        
         def handle_other_id(entry,k):
             for t in k:
-                tag = t.tag.replace(replace_data, '').replace('-', '_')
-                value = t.text
-                entry[tag] = value
-
-        def handle_vulnerable_configuration(entry,k):
-            for t in k:
-                if t.tag.replace(replace_data, '').replace('-', '_') == 'cncpe':
-                    cncpe = t.attrib
-                    entry['cpe_operator'] = cncpe.get('operator', '').upper()
-                    entry['cpe_negate'] = cncpe.get('negate', '').lower()
-                    for cc in t:
-                        if cc.tag.replace(replace_data, '').replace('-', '_') in ["cncpe_terrace","cncpe_software"]:
-                            for g in cc:
-                                vul_cpe = g.attrib.get('name')
-                                if not self.is_chinese(vul_cpe):
-                                    vul_cpe = vul_cpe.lower().replace('\\', '')
-                                    entry['vuln_software_list'] = entry.get('vuln_software_list', []) + [vul_cpe]
+                if  t.tag.replace(replace_data, '').replace('-', '_') == 'cve_id':
+                    entry['cve'] = t.text
 
         def handle_refs(entry,k):
             for s in k:
@@ -149,21 +140,117 @@ class Save_Cnnvd():
                         entry['refs'] = entry.get('refs', []) + [url]
 
         def handle_vul_type(entry,value):
-            entry['vuln_type'] = value.text
+            entry['type'] = value.text
 
         def handle_severity(entry,value):
-            entry['severity'] = SEVERITY_DICT.get(value.text, 0)
+            entry['risk_level'] = SEVERITY_DICT.get(value.text, 0)
         
         def handle_vuln_software_list(entry,k):
             pass
-
+        
+        def handle_name(entry,k):
+            entry['title'] = k.text
+            
+        def handle_solution(entry,k):
+            entry['solution'] = k.text
+            
+        def handle_descript(entry,k):
+            entry['descript'] = k.text
+        
+        def handle_vuln_id(entry,k):
+            entry['cnnvd'] = k.text
+        
+        def handle_source(entry,k):
+            entry['source'] = "CNNVD漏洞库"
+            
+        
         handlers = {
             'other_id': handle_other_id,
-            'vulnerable_configuration': handle_vulnerable_configuration,
             'refs': handle_refs,
             'vuln_type': handle_vul_type,
             'severity': handle_severity,
             'vuln_software_list':handle_vuln_software_list,
+            'name':handle_name,
+            'vuln_descript':handle_descript,
+            'vuln-solution':handle_solution,
+            'vuln_id':handle_vuln_id,
+            'source':handle_source,
+        }
+          
+        entry = {}   
+        for k in child_of_root:
+            value = k.text if k.text else ''
+            tag = k.tag.replace('-', '_')
+            replace_data, _, tag = tag.rpartition('}')
+            replace_data = replace_data + "}"
+            if tag in handlers:    
+                handlers[tag](entry,k)
+            else:
+                entry[tag] = value
+        
+        entry['refs'] = ','.join(entry.get('refs', []))
+        return Cnnvd(**entry)
+        
+    
+    async def parse_all_cnnvd(self,path):
+        allvul = []
+        tree = ET.parse(path)
+        root = tree.getroot()
+        re_str = r"^((http://)|(https://))?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}(/)"
+
+        def handle_other_id(entry,k):
+            for t in k:
+                if  t.tag.replace(replace_data, '').replace('-', '_') == 'cve_id':
+                    entry['cve'] = t.text
+
+        def handle_refs(entry,k):
+            for s in k:
+                tag = s.tag.replace(replace_data, '').replace('-', '_')
+                if tag in ['ref_url', 'ref_source']:
+                    url = s.text if s.text and re.match(re_str, s.text) else ''
+                    if url:
+                        entry['refs'] = entry.get('refs', []) + [url]
+
+        def handle_vul_type(entry,value):
+            entry['type'] = value.text
+
+        def handle_severity(entry,value):
+            entry['risk_level'] = SEVERITY_DICT.get(value.text, 0)
+        
+        def handle_vuln_software_list(entry,k):
+            pass
+        
+        def handle_name(entry,k):
+            entry['title'] = k.text
+            
+        def handle_solution(entry,k):
+            entry['solution'] = k.text
+            
+        def handle_descript(entry,k):
+            entry['descript'] = k.text
+        
+        def handle_vuln_id(entry,k):
+            entry['cnnvd'] = k.text
+        
+        def handle_source(entry,k):
+            entry['source'] = "CNNVD漏洞库"
+        
+        def handle_fromat_time(entry,k): 
+            entry[k.tag.replace('-', '_')] = k.text          
+
+        handlers = {
+            'other_id': handle_other_id,
+            'refs': handle_refs,
+            'vuln_type': handle_vul_type,
+            'severity': handle_severity,
+            'vuln_software_list':handle_vuln_software_list,
+            'name':handle_name,
+            'vuln_descript':handle_descript,
+            'vuln-solution':handle_solution,
+            'vuln_id':handle_vuln_id,
+            'source':handle_source,
+            'published': handle_fromat_time,
+            'modified': handle_fromat_time,
         }
 
         for child_of_root in root:
@@ -174,31 +261,21 @@ class Save_Cnnvd():
                 tag = k.tag.replace('-', '_')
                 replace_data, _, tag = tag.rpartition('}')
                 replace_data = replace_data + "}"
-                if tag in handlers:
+                if tag in handlers:    
                     handlers[tag](entry,k)
                 else:
                     entry[tag] = value
-
+           
             entry['refs'] = ','.join(entry.get('refs', []))
-            entry['vuln_software_list'] = ','.join(sorted(entry.get('vuln_software_list', [])))
-            allvul.append(Cnnvd(**entry))
-
         return allvul  
 
 async def run(cnnvd_change):
     import time
     start_time = time.time()
     save_cnnvd = Save_Cnnvd(config_cnnvd.save_path)  
-    # await save_cnnvd.parse_cnnvd("./download/cnnvd/test.xml")  
-    # await save_cnnvd.parse_cnnvd("./download/cnnvd/2020.xml") 
     await save_cnnvd.save_to_db(cnnvd_change)    
     end_time = time.time()
 
     run_time = end_time - start_time
     logger.info(f"cnnvd解析运行时间为:{run_time}秒") 
 
-        
-
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(run()) 

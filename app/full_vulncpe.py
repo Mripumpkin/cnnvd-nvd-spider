@@ -14,7 +14,6 @@ from log.log import CustomLogger
 
 logger  = CustomLogger(__name__).get_logger()
 
-
 class Full_Vulncpe():
     def __init__(self):
         self.dbm = None
@@ -22,9 +21,9 @@ class Full_Vulncpe():
     
     async def get_cnnvd_cpe(self,offset_val, cnnvd_result):
         try:
-            cnnvd_tmp = await self.dbm.get_connvd_offset(self.limit,offset_val)       #with_entities查询指定列;with_entities().dintinct()去重
+            cnnvd_tmp = await self.dbm.get_connvd_offset(self.limit,offset_val)       
             for i in cnnvd_tmp:     
-                cnnvd_id = str(i.id)            #vrp_cnnvd中id
+                cnnvd_id = str(i.id)        
                 vuln_software_list = str(i.vuln_software_list)
                 if cnnvd_result.get(cnnvd_id):
                     continue
@@ -34,7 +33,6 @@ class Full_Vulncpe():
             logger.info('query cnnvd the {} done'.format(offset_val))
         except Exception as e:
             logger.error('get vrp_cnnvd cpe error:{}'.format(e))
-            # import pdb;pdb.set_trace()
             return
 
 
@@ -52,7 +50,6 @@ class Full_Vulncpe():
             logger.info('query vulncpe the {} done'.format(offset_val))            
         except Exception as e:
             logger.error('get vrp_vulcpe error:{}'.format(e))
-            # import pdb;pdb.set_trace()
             return
 
 
@@ -130,7 +127,7 @@ class Full_Vulncpe():
     async def full_vnlncpe(self):
         self.dbm = await SqlManager()
         
-        cnnvd_result, vulncpe_result = collections.OrderedDict(), {}        #对字典对象中元素的排序
+        cnnvd_result, vulncpe_result = collections.OrderedDict(), {}        
         offset_val = 0
         batch_size = 10000
     
@@ -142,9 +139,8 @@ class Full_Vulncpe():
         while offset_val <= await self.dbm.cpe_count():
             await self.get_vulncpe_cpe(offset_val, vulncpe_result)
             offset_val += batch_size
-        # 所有数据获取任务完成后，继续执行处理任务 
         count = 0
-        for id, cpes in cnnvd_result.items():           #以列表的形式返回可遍历的元组数组
+        for id, cpes in cnnvd_result.items():          
             cpes = list(set(cpes))
             count += 1
             commit_flag = False
@@ -153,7 +149,7 @@ class Full_Vulncpe():
                     exist_cpes = vulncpe_result.get(id)
                     exist_cpes = list(set(exist_cpes))
                     for cpe in cpes:
-                        if cpe and cpe.startswith('cpe') and cpe not in exist_cpes:     #检查字符串是否是以指定子字符串开头，返回bool值
+                        if cpe and cpe.startswith('cpe') and cpe not in exist_cpes:     
                             vulncpe = self.format_interval_cpe(id,cpe)
                             del vulncpe["id"]
                             await self.dbm.update_cpe_by_id(id,vulncpe)
@@ -170,7 +166,6 @@ class Full_Vulncpe():
             except Exception as e:
                 logger.error('insert {} to db error: {}'.format(id, e))
                 self.dbm.rollback()
-        #TODO:删除cnnvd表里面没有的值
         await self.dbm.close()    
         logger.info('Full_vulncpe all subtasks are done.')      
         

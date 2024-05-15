@@ -364,12 +364,6 @@ async def run():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(run())
-    
-    
-    # spider_n = Spider_Nvd(NVD.all_url,NVD.save_path)
-    # # spider_n.download_json()
-    # spider_n.get_nvd_cpes_detail("CVE-2022-31622")
-    # print(spider_n.get_nvd_cpes_detail.__name__)
 
 
 

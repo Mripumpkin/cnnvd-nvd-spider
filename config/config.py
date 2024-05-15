@@ -1,8 +1,9 @@
 import os
 
-SCHEDULER_TIME = 30
+SCHEDULER_TIME = 4
 SCHEDULER_UNIT = {"s":"seconds","m":"minutes","h":"hours","d":"days","w":"weeks","mon":"months"}
-
+SCHEDULER_WEEK = {"m":"monday","tu":"tuesday","w":"wednesday","ts":"thursday","f":"friday","sa":"saturday","su":"Sunday"}
+SPECIFIC_TIME = "11:30"
 # 设置要下载的URL和保存路径
 class NVD(object):
     all_url = {
@@ -37,7 +38,7 @@ class ProductionConfig(Config):
     PGSQL_PORT = os.getenv('CVM_PGSQL_SERVER_PORT') or '5432'
     PGSQL_USER = os.getenv('CVM_PGSQL_SERVER_USER') or 'postgres'
     PGSQL_DATABASE = os.getenv('CVM_PGSQL_SERVER_DATABASE') or 'vrp'
-    PGSQL_PASSWORD = os.getenv('CVM_PGSQL_SERVER_PASSWORD') or 'b7c90975e592c440636957aa70ce60e0'
+    PGSQL_PASSWORD = os.getenv('CVM_PGSQL_SERVER_PASSWORD') or ''
     db_config = dict(
         host=PGSQL_SERVER,
         port=PGSQL_PORT,

@@ -9,7 +9,6 @@ from .model import Base
 
 logger  = CustomLogger(__name__).get_logger()
 
-# 连接到数据库引擎
 def connect_to_database(url):
     engine = create_engine(
         url,
@@ -17,7 +16,6 @@ def connect_to_database(url):
     )
     return engine
 
-# 创建表格
 def create_tables(engine):
     Base.metadata.create_all(engine)
     print("数据库表格已成功创建")
@@ -31,8 +29,6 @@ def creat_base():
             logger.warning("数据库创建成功")
         else:
             logger.warning("数据库已存在")
-        
-        # 创建表格
         create_tables(engine)
     except Exception as e:
         logger.error(f"数据库创建异常：{e}")

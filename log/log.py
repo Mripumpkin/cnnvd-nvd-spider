@@ -17,9 +17,7 @@ COLORS = {
     'ERROR': RED
 }
 
-# LOG_FORMAT = "[$BOLD%(name)-15s$RESET][%(levelname)-10s][%(asctime) s]  %(message)s ($BOLD%(filename)s$RESET:%(lineno)d)"
 LOG_FORMAT = "[$BOLD%(name)s$RESET][%(levelname)-10s][%(asctime) s]  %(message)s ($BOLD%(filename)s$RESET:%(lineno)d)"
-
 
 LOG_PATH = os.path.join(os.getcwd(), 'logs')
 
