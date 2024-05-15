@@ -15,9 +15,8 @@
 4. nvd_parse.py: 解析及同步CNNVD漏洞库，根据CVD编号，从NVD JSON文件获取CPE等相关信息并补齐
 
 ## 使用说明
-1. :info:**执行python -m main 运行**
-2. :info:**config文件可设置计划任务时间**
-3. :warning:**数据库选择为为PostgreSQL**
-4. :warning:**CNNVD爬虫需要申请CONNVD账号，账号密码在config.py上设置**
-5. :warning:**CNNVD XML文件爬取后，需要格式化处理XML文件中的未编码字符，使CONNVD XML其可正常解析，否则会报错**
-6. :warning:**执行python -m db.create_db 创建数据库**
+1. :information_source:**执行python -m main 运行**
+2. :warning:**数据库选择为为PostgreSQL**
+3. :warning:**CNNVD爬虫需要申请CONNVD账号，账号密码在config.py上设置**
+4. :warning:**CNNVD XML文件爬取后，需要格式化处理XML文件中的未编码字符，使CONNVD XML其可正常解析，否则会报错**
+5. :warning:**执行python -m db.create_db 创建数据库**
