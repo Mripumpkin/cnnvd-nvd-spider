@@ -9,7 +9,7 @@ from common.scheuled_tool import ScheduledTask
 
 logger  = CustomLogger(__name__).get_logger()
 
-from config.config import CNNVD,NVD,SCHEDULER_TIME,SCHEDULER_UNIT,env
+from config.config import CNNVD,NVD,SCHEDULER_TIME,SCHEDULER_UNIT,SCHEDULER_WEEK,SPECIFIC_TIME,env
 
 # spider.py:下载cnnvd xml文件和nvd json文件
 # format_xml.py: 格式化cnnvd xml文件
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
     if 'pro' in sys.argv or env == "pro":
         sys.stdout = NullWriter()
-        Task = ScheduledTask(task_func=main_task, interval=SCHEDULER_TIME, unit=SCHEDULER_UNIT["h"])
+        Task = ScheduledTask(task_func=main_task, interval=SCHEDULER_TIME, unit=SCHEDULER_WEEK["su"],spesice_time=SPECIFIC_TIME)
         asyncio.run(Task.run_schedule())
     else:
         asyncio.run(main_task())

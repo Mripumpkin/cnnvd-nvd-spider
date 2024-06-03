@@ -1,8 +1,8 @@
 import os
 
-SCHEDULER_TIME = 4
+SCHEDULER_TIME = 1
 SCHEDULER_UNIT = {"s":"seconds","m":"minutes","h":"hours","d":"days","w":"weeks","mon":"months"}
-SCHEDULER_WEEK = {"m":"monday","tu":"tuesday","w":"wednesday","ts":"thursday","f":"friday","sa":"saturday","su":"Sunday"}
+SCHEDULER_WEEK = {"m":"monday","tu":"tuesday","w":"wednesday","ts":"thursday","f":"friday","sa":"saturday","su":"sunday"}
 SPECIFIC_TIME = "11:30"
 
 class NVD(object):

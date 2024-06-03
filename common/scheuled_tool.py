@@ -1,6 +1,9 @@
 import schedule
 import asyncio
 
+from log.log import CustomLogger
+logger  = CustomLogger(__name__).get_logger()
+
 class ScheduledTask:
     _instance = None
 
@@ -27,6 +30,7 @@ class ScheduledTask:
         job = getattr(schedule.every(self.interval), self.unit)
         if self.spesice_time:
             job.at(self.spesice_time).do(lambda: asyncio.ensure_future(self.run_async()))
+            logger.warning(f"任务开始,执行时间：{job.next_run}")
         else:
             job.do(lambda: asyncio.ensure_future(self.run_async()))
         while True:
