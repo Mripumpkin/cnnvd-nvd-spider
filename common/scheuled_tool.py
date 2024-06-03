@@ -27,12 +27,15 @@ class ScheduledTask:
             raise ValueError("Task function not provided")
 
     async def run_schedule(self):
-        job = getattr(schedule.every(self.interval), self.unit)
+        if self.interval:
+            job = getattr(schedule.every(self.interval), self.unit)
+        else:
+            job = getattr(schedule.every(), self.unit)
         if self.spesice_time:
             job.at(self.spesice_time).do(lambda: asyncio.ensure_future(self.run_async()))
-            logger.warning(f"任务开始,执行时间：{job.next_run}")
         else:
             job.do(lambda: asyncio.ensure_future(self.run_async()))
+        logger.warning(f"任务开始,执行时间：{job.next_run}")
         while True:
             schedule.run_pending()
             await asyncio.sleep(1)
