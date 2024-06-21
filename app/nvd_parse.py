@@ -4,6 +4,10 @@
 # time: 2023/09/01
 # 导入需要的模块
 
+#cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>
+#CPE:2.3:类型:厂商:产品:版本:更新版本:发行版本:界面语言:软件发行版本:目标软件:目标硬件:其他
+
+
 import os
 import re
 import datetime 
@@ -28,10 +32,11 @@ def fmt_cpe(cpe):
     except Exception as e:
         raise ValueError(f"CPE格式解析错误:{e}:{cpe}")
 
+
 class Save_Nvd():
     def __init__(self,path):
         self.json_dir = path
-        self.compare_field = ['cpe', 'cve', 'cwe', 'cvss', 'cvss_vector', 'refs']
+        self.compare_field = ['cpe', 'cve', 'cwe', 'cvss2', 'cvss2_vector','cvss3', 'cvss3_vector', 'refs']
         
     async def produce_entries(self,filename):
         with open(filename, 'r') as f:
@@ -74,8 +79,14 @@ class Save_Nvd():
                 if base_metric_v2:
                     cvss_v2 = base_metric_v2.get('cvssV2', {})
                     if cvss_v2:
-                        entry['cvss_vector'] = cvss_v2.get('vectorString', '')
-                        entry['cvss'] = cvss_v2.get('baseScore', '')
+                        entry['cvss2_vector'] = cvss_v2.get('vectorString', '')
+                        entry['cvss2'] = cvss_v2.get('baseScore', '')
+                base_metric_v3 = impact.get('baseMetricV3', {})
+                if base_metric_v3:
+                    cvss_v3 = base_metric_v3.get('cvssV3', {})
+                    if cvss_v3:
+                        entry['cvss3_vector'] = cvss_v3.get('vectorString', '')
+                        entry['cvss3'] = cvss_v3.get('baseScore', '')
             
             refs = item.get("cve",{}).get("references",{})
             if refs:
@@ -152,8 +163,7 @@ class Save_Nvd():
         return update_info
         
     async def save_to_db(self,check_list:dict):
-        
-        exist_cve = {}
+
         dbm = await SqlManager()
         check_list = list(check_list.keys())
         file_list = [os.path.basename(url).replace(".gz", "") for url in check_list]
@@ -163,6 +173,7 @@ class Save_Nvd():
         check_list_json = [item for item in file_list if item in list_json]
         for check in check_list_json:
             logger.info(f"开始解析入库{check}文件")
+            exist_cve = {}
             year = check.rsplit('.', 1)[0].rsplit('-', 1)[1] if re.match(r'\d+', check.rsplit('.', 1)[0].rsplit('-', 1)[1]) else datetime.datetime.now().year  
             alldata = await dbm.get_contains_value_connvd(f'CVE-{year}')
             for i in alldata:         

@@ -13,10 +13,11 @@
 2. format_xml.py: 格式化处理XML文件中的未编码字符，使其可正常解析
 3. cnnvd_parse.py: 解析及同步CNNVD漏洞库
 4. nvd_parse.py: 解析及同步CNNVD漏洞库，根据CVD编号，从NVD JSON文件获取CPE等相关信息并补齐
+5. generate_excel.py 漏洞数据生成excel文件夹
 
 ## 使用说明
-1. :information_source:**执行python -m main 运行**
+1. :information_source:**执行 python -m main 运行**
 2. :warning:**数据库选择为为PostgreSQL**
 3. :warning:**CNNVD爬虫需要申请CONNVD账号，账号密码在config.py上设置**
 4. :warning:**CNNVD XML文件爬取后，需要格式化处理XML文件中的未编码字符，使CONNVD XML其可正常解析，否则会报错**
-5. :warning:**执行python -m db.create_db 创建数据库**
+5. :warning:**执行 python -m db.create_db 创建数据库**

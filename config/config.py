@@ -1,9 +1,19 @@
 import os
 
 SCHEDULER_TIME = 1
-SCHEDULER_UNIT = {"s":"seconds","m":"minutes","h":"hours","d":"days","w":"weeks","mon":"months"}
+SCHEDULER_UNIT = {"s":"seconds","m":"minutes","h":"hours","d":"days","w":"weeks","mon":"month"}
 SCHEDULER_WEEK = {"m":"monday","tu":"tuesday","w":"wednesday","ts":"thursday","f":"friday","sa":"saturday","su":"sunday"}
-SPECIFIC_TIME = "11:30"
+SPECIFIC_TIME = "23:30"
+TASK_TIME= {"day":25,"hour":0,"minute":0}
+
+CHANGE_CNNVD_LINK_NVD = {"2024年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2024.json.gz", "2023年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.gz", "2022年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2022.json.gz", "2021年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2021.json.gz", "2020年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2020.json.gz", "2019年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2019.json.gz", "2018年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2018.json.gz", "2017年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2017.json.gz", "2016年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2016.json.gz", "2015年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2015.json.gz", "2014年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2014.json.gz", "2013年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2013.json.gz", "2012年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2012.json.gz", "2011年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2011.json.gz", "2010年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2010.json.gz", "2009年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2009.json.gz", "2008年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2008.json.gz", "2007年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2007.json.gz", "2006年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2006.json.gz", "2005年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2005.json.gz", "2004年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2004.json.gz", "2003年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2003.json.gz", "2002年":"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2002.json.gz"}
+
+BEFOREJUNE = "before-June"
+BEFOREALL = "all"
+MONTHUPDATE = "mouth-update"
+
+APP_HOST = "0.0.0.0"
+APP_PORT = "8090"
 
 class NVD(object):
     all_url = {
@@ -92,7 +102,7 @@ else:
     env = sys.argv[1]  
 
 APP_ENV = os.environ.get('APP_ENV', env).lower()
-print(f"采用环境: {APP_ENV} (开发:dev|生产:pro|默认(生产):default)")
+print(f"采用环境: {APP_ENV} (开发:dev|生产:pro|excel:excel|默认(生产):default)")
 
 if APP_ENV in mapping:
     config = mapping[APP_ENV]()

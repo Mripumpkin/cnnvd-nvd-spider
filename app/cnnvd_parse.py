@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# author: samsepi0l
-# time: 2023/08/10
-# 导入需要的模块
 
 import xml.etree.cElementTree as ET    #解析XML文件
-from lxml import etree
 import os
 import re
 import datetime 
@@ -30,7 +26,6 @@ class Save_Cnnvd():
         self.title_list = ['编号撤回', '编号已被CVE保留', '编号错误', '编码撤回', '被拒绝的漏洞编号', '编号重复', '编号撤销', 'None', '', '撤销', '撤回', None]
         self.attr_list = ['cve', 'title', 'type', 'risk_level', 'descript']
     
-    #unicode中文字符编码范围,判断是否为汉字
     @staticmethod  
     def is_chinese(string):
         for ch in string:
@@ -117,7 +112,6 @@ class Save_Cnnvd():
                 logger.error(e)   
         await dbm.close()
         
-    
     async def parse_cnnvd(self,path):
         with open(path,'r') as file:
             tree = ET.parse(file)

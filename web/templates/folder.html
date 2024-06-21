@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Folder {{ folder }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>文件夹 {{ folder }}</h1>
+    <p class="back-link"><a href="{{ url_for('index') }}">返回上级目录</a></p>
+    <h2>Files:</h2>
+    <ul>
+        {% for file in files %}
+        <li><a href="{{ url_for('download_file', filename=folder + '/' + file) }}" download>{{ file }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Folder</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .generate-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .generate-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        function disableButton() {
+            var button = document.getElementById('generateButton');
+            button.disabled = true;
+            button.innerText = '正在生成...';
+        }
+
+        function enableButton() {
+            var button = document.getElementById('generateButton');
+            button.disabled = false;
+            button.innerText = '生成 Excel';
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var form = document.getElementById("generateForm");
+            form.onsubmit = async function(event) {
+                event.preventDefault();
+                disableButton();
+
+                var days = document.getElementById("days").value;
+                var url = form.action + "?days=" + days;
+
+                try {
+                    let response = await fetch(url);
+                    let result = await response.json();
+                    if (response.ok) {
+                        alert(result.message);
+                    } else {
+                        alert("Error: " + result.message);
+                    }
+                } catch (error) {
+                    alert("An error occurred: " + error.message);
+                } finally {
+                    enableButton();
+                }
+            };
+        });
+    </script>
+</head>
+<body>
+    <h1>漏洞知识库</h1>
+    <form id="generateForm" method="get" action="{{ url_for('cnnvd.generate_excel') }}">
+        <label for="days">选择时间范围:</label>
+        <select id="days" name="days">
+            <option value="">全部</option>
+            <option value="7">一周前</option>
+            <option value="30">30天前</option>
+            <option value="60">60天前</option>
+            <option value="90">90天前</option>
+        </select>
+        <button type="submit" class="generate-button" id="generateButton">生成 Excel</button>
+    </form>
+
+    <h2>漏洞信息文件:</h2>
+    <ul>
+        {% for folder in folders %}
+        <li><a href="{{ url_for('open_folder', folder=folder) }}">{{ folder }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
+
