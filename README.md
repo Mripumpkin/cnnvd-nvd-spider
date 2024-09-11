@@ -12,7 +12,7 @@
 1. spider.py: 下载CNNVD XML文件和NVD JSON文件
 2. format_xml.py: 格式化处理XML文件中的未编码字符，使其可正常解析
 3. cnnvd_parse.py: 解析及同步CNNVD漏洞库
-4. nvd_parse.py: 解析及同步CNNVD漏洞库，根据CVD编号，从NVD JSON文件获取CPE等相关信息并补齐
+4. nvd_parse.py: 解析及同步CNNVD漏洞库，根据CVE编号，从NVD JSON文件获取CPE等相关信息并补齐
 5. generate_excel.py 漏洞数据生成excel文件夹
 
 ## 使用说明
